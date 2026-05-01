@@ -18,7 +18,7 @@ const SummaryPage = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
-  const [selectedPerson, setSelectedPerson] = useState("Ajay");
+  const [selectedPerson, setSelectedPerson] = useState(null);
   const reportRef = useRef(null);
 
   const summaryRows = useMemo(() => buildSummary(expenses), [expenses]);
@@ -100,8 +100,6 @@ const SummaryPage = () => {
             />
           </div>
 
-          <PersonPaidExpenses expenses={expenses} person={selectedPerson} />
-
           <div>
             <h3 className="mb-2 text-base font-bold text-slate-950 sm:mb-3 sm:text-lg">
               Who Pays Whom
@@ -130,6 +128,11 @@ const SummaryPage = () => {
           </div>
         </section>
       )}
+      <PersonPaidExpenses
+        expenses={expenses}
+        person={selectedPerson}
+        onClose={() => setSelectedPerson(null)}
+      />
     </PageShell>
   );
 };
