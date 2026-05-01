@@ -89,7 +89,7 @@ The app never divides the total group expense equally among all users.
 GET    /expenses
 POST   /expenses
 PUT    /expenses/:id
-DELETE /expenses/:id
+PATCH  /expenses/:id/hide
 ```
 
 ## Export Features

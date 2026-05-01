@@ -15,6 +15,7 @@ const runSeed = async () => {
       remarks: "Weekend groceries",
       paidBy: "Ajay",
       participants: ["Ajay", "Akshay", "Kumar", "Kinnu"],
+      isHidden: false,
       date: new Date()
     },
     {
@@ -22,6 +23,7 @@ const runSeed = async () => {
       remarks: "Movie tickets",
       paidBy: "Kumar",
       participants: ["Ajay", "Kumar", "Kinnu"],
+      isHidden: false,
       date: new Date()
     },
     {
@@ -29,6 +31,7 @@ const runSeed = async () => {
       remarks: "Dinner",
       paidBy: "Akshay",
       participants: ["Akshay", "Kumar"],
+      isHidden: false,
       date: new Date()
     }
   ]);

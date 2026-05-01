@@ -25,5 +25,5 @@ export const expenseApi = {
   list: () => request("/expenses"),
   create: (body) => request("/expenses", { method: "POST", body }),
   update: (id, body) => request(`/expenses/${id}`, { method: "PUT", body }),
-  remove: (id) => request(`/expenses/${id}`, { method: "DELETE" })
+  hide: (id) => request(`/expenses/${id}/hide`, { method: "PATCH" })
 };

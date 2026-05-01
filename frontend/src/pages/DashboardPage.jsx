@@ -20,7 +20,7 @@ const DashboardPage = () => {
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deletingId, setDeletingId] = useState("");
+  const [hidingId, setHidingId] = useState("");
   const [savingId, setSavingId] = useState("");
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [modalMode, setModalMode] = useState("details");
@@ -94,19 +94,19 @@ const DashboardPage = () => {
     }
   };
 
-  const handleDelete = async (expenseId) => {
-    setDeletingId(expenseId);
+  const handleHide = async (expenseId) => {
+    setHidingId(expenseId);
     setError("");
     setSuccess("");
 
     try {
-      await expenseApi.remove(expenseId);
+      await expenseApi.hide(expenseId);
       setExpenses((current) => current.filter((expense) => expense._id !== expenseId));
-      setSuccess("Expense deleted.");
+      setSuccess("Expense hidden. It is no longer included in calculations.");
     } catch (err) {
       setError(err.message);
     } finally {
-      setDeletingId("");
+      setHidingId("");
     }
   };
 
@@ -266,10 +266,10 @@ const DashboardPage = () => {
           </div>
           <ExpenseTable
             expenses={expenses}
-            onDelete={handleDelete}
+            onHide={handleHide}
             onEdit={openEdit}
             onView={openDetails}
-            deletingId={deletingId}
+            hidingId={hidingId}
           />
         </section>
       </div>

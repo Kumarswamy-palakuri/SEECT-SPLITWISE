@@ -37,7 +37,7 @@ const validateExpenseInput = ({ amount, paidBy, participants }) => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const expenses = await Expense.find()
+    const expenses = await Expense.find({ isHidden: { $ne: true } })
       .sort({ date: -1, createdAt: -1 });
 
     res.json({ expenses });
@@ -98,15 +98,19 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.patch("/:id/hide", async (req, res, next) => {
   try {
-    const deletedExpense = await Expense.findByIdAndDelete(req.params.id);
+    const expense = await Expense.findByIdAndUpdate(
+      req.params.id,
+      { isHidden: true },
+      { new: true }
+    );
 
-    if (!deletedExpense) {
+    if (!expense) {
       return res.status(404).json({ message: "Expense not found." });
     }
 
-    res.json({ message: "Expense deleted." });
+    res.json({ message: "Expense hidden.", expense });
   } catch (error) {
     next(error);
   }

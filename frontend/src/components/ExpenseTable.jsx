@@ -1,7 +1,7 @@
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil } from "lucide-react";
 import { formatCurrency } from "../utils/splitCalculator";
 
-const ExpenseTable = ({ expenses, onDelete, onEdit, onView, deletingId }) => (
+const ExpenseTable = ({ expenses, onHide, onEdit, onView, hidingId }) => (
   <>
     <div className="space-y-3 sm:hidden">
       {expenses.length === 0 ? (
@@ -64,12 +64,12 @@ const ExpenseTable = ({ expenses, onDelete, onEdit, onView, deletingId }) => (
               </button>
               <button
                 type="button"
-                onClick={() => onDelete(expense._id)}
-                disabled={deletingId === expense._id}
+                onClick={() => onHide(expense._id)}
+                disabled={hidingId === expense._id}
                 className="focus-ring inline-flex h-11 items-center justify-center gap-1 rounded-md border border-slate-200 text-sm font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Trash2 size={17} />
-                Delete
+                <EyeOff size={17} />
+                Hide
               </button>
             </div>
           </article>
@@ -144,13 +144,13 @@ const ExpenseTable = ({ expenses, onDelete, onEdit, onView, deletingId }) => (
                       </button>
                       <button
                         type="button"
-                        title="Delete expense"
-                        aria-label="Delete expense"
-                        onClick={() => onDelete(expense._id)}
-                        disabled={deletingId === expense._id}
+                        title="Hide expense"
+                        aria-label="Hide expense"
+                        onClick={() => onHide(expense._id)}
+                        disabled={hidingId === expense._id}
                         className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        <Trash2 size={17} />
+                        <EyeOff size={17} />
                       </button>
                     </div>
                   </td>
