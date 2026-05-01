@@ -29,9 +29,24 @@ const validateExpenseInput = ({ amount, paidBy, participants }) => {
     };
   }
 
+  const amountCents = Math.round(numericAmount * 100);
+
   return {
-    amount: Math.round(numericAmount * 100) / 100,
+    amount: amountCents / 100,
+    amountCents,
     participants: uniqueParticipants
+  };
+};
+
+const serializeExpense = (expense) => {
+  const plainExpense = expense.toObject ? expense.toObject() : expense;
+  const amountCents =
+    plainExpense.amountCents ?? Math.round(Number(plainExpense.amount || 0) * 100);
+
+  return {
+    ...plainExpense,
+    amount: amountCents / 100,
+    amountCents
   };
 };
 
@@ -40,7 +55,7 @@ router.get("/", async (req, res, next) => {
     const expenses = await Expense.find({ isHidden: { $ne: true } })
       .sort({ date: -1, createdAt: -1 });
 
-    res.json({ expenses });
+    res.json({ expenses: expenses.map(serializeExpense) });
   } catch (error) {
     next(error);
   }
@@ -57,12 +72,13 @@ router.post("/", async (req, res, next) => {
 
     const expense = await Expense.create({
       amount: validation.amount,
+      amountCents: validation.amountCents,
       remarks,
       paidBy,
       participants: validation.participants
     });
 
-    res.status(201).json({ expense });
+    res.status(201).json({ expense: serializeExpense(expense) });
   } catch (error) {
     next(error);
   }
@@ -81,6 +97,7 @@ router.put("/:id", async (req, res, next) => {
       req.params.id,
       {
         amount: validation.amount,
+        amountCents: validation.amountCents,
         remarks,
         paidBy,
         participants: validation.participants
@@ -92,7 +109,7 @@ router.put("/:id", async (req, res, next) => {
       return res.status(404).json({ message: "Expense not found." });
     }
 
-    res.json({ expense });
+    res.json({ expense: serializeExpense(expense) });
   } catch (error) {
     next(error);
   }
@@ -110,7 +127,7 @@ router.patch("/:id/hide", async (req, res, next) => {
       return res.status(404).json({ message: "Expense not found." });
     }
 
-    res.json({ message: "Expense hidden.", expense });
+    res.json({ message: "Expense hidden.", expense: serializeExpense(expense) });
   } catch (error) {
     next(error);
   }

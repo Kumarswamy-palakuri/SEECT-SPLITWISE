@@ -4,11 +4,14 @@ export const formatCurrency = (amount) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(amount || 0);
 
 const toCents = (amount) => Math.round(Number(amount || 0) * 100);
 const fromCents = (cents) => cents / 100;
+export const getExpenseCents = (expense) =>
+  Number.isFinite(Number(expense.amountCents)) ? Number(expense.amountCents) : toCents(expense.amount);
 
 export const buildSummary = (expenses) => {
   const ledger = Object.fromEntries(
@@ -23,7 +26,7 @@ export const buildSummary = (expenses) => {
   );
 
   expenses.forEach((expense) => {
-    const amountCents = toCents(expense.amount);
+    const amountCents = getExpenseCents(expense);
     const participants = (expense.participants || []).filter((name) => ledger[name]);
 
     if (!ledger[expense.paidBy] || amountCents <= 0 || participants.length === 0) {
@@ -101,4 +104,4 @@ export const buildSettlements = (summaryRows) => {
 };
 
 export const getTotalExpense = (expenses) =>
-  expenses.reduce((total, expense) => total + Number(expense.amount || 0), 0);
+  fromCents(expenses.reduce((total, expense) => total + getExpenseCents(expense), 0));

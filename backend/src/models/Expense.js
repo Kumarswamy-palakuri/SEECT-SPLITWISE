@@ -8,6 +8,10 @@ const expenseSchema = new mongoose.Schema(
       required: true,
       min: 0.01
     },
+    amountCents: {
+      type: Number,
+      min: 1
+    },
     remarks: {
       type: String,
       trim: true,

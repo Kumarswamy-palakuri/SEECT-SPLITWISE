@@ -1,7 +1,7 @@
 import { Save, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { GROUP_MEMBERS } from "../constants";
-import { formatCurrency } from "../utils/splitCalculator";
+import { formatCurrency, getExpenseCents } from "../utils/splitCalculator";
 import StatusMessage from "./StatusMessage";
 
 const ExpenseDetailsModal = ({ expense, mode, onClose, onSave, isSaving }) => {
@@ -33,7 +33,7 @@ const ExpenseDetailsModal = ({ expense, mode, onClose, onSave, isSaving }) => {
       return 0;
     }
 
-    return Number(expense.amount || 0) / expense.participants.length;
+    return getExpenseCents(expense) / expense.participants.length / 100;
   }, [expense]);
 
   if (!expense) {

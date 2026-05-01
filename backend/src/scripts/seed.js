@@ -12,6 +12,7 @@ const runSeed = async () => {
   await Expense.create([
     {
       amount: 1000,
+      amountCents: 100000,
       remarks: "Weekend groceries",
       paidBy: "Ajay",
       participants: ["Ajay", "Akshay", "Kumar", "Kinnu"],
@@ -20,6 +21,7 @@ const runSeed = async () => {
     },
     {
       amount: 750,
+      amountCents: 75000,
       remarks: "Movie tickets",
       paidBy: "Kumar",
       participants: ["Ajay", "Kumar", "Kinnu"],
@@ -28,6 +30,7 @@ const runSeed = async () => {
     },
     {
       amount: 1200,
+      amountCents: 120000,
       remarks: "Dinner",
       paidBy: "Akshay",
       participants: ["Akshay", "Kumar"],
