@@ -1,6 +1,7 @@
 import { FileDown, Sheet } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import PageShell from "../components/PageShell";
+import PersonPaidExpenses from "../components/PersonPaidExpenses";
 import StatusMessage from "../components/StatusMessage";
 import { SettlementTable, SummaryTable } from "../components/SummaryTables";
 import { expenseApi } from "../services/api";
@@ -17,6 +18,7 @@ const SummaryPage = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [selectedPerson, setSelectedPerson] = useState("Ajay");
   const reportRef = useRef(null);
 
   const summaryRows = useMemo(() => buildSummary(expenses), [expenses]);
@@ -91,8 +93,14 @@ const SummaryPage = () => {
             <h3 className="mb-2 text-base font-bold text-slate-950 sm:mb-3 sm:text-lg">
               Summary
             </h3>
-            <SummaryTable rows={summaryRows} />
+            <SummaryTable
+              rows={summaryRows}
+              selectedPerson={selectedPerson}
+              onSelectPerson={setSelectedPerson}
+            />
           </div>
+
+          <PersonPaidExpenses expenses={expenses} person={selectedPerson} />
 
           <div>
             <h3 className="mb-2 text-base font-bold text-slate-950 sm:mb-3 sm:text-lg">

@@ -1,11 +1,20 @@
 import { ArrowRight } from "lucide-react";
 import { formatCurrency } from "../utils/splitCalculator";
 
-export const SummaryTable = ({ rows }) => (
+export const SummaryTable = ({ rows, selectedPerson, onSelectPerson }) => (
   <>
     <div className="grid grid-cols-2 gap-2 sm:hidden">
       {rows.map((row) => (
-        <article key={row.person} className="rounded-lg border border-slate-200 bg-white p-3">
+        <button
+          type="button"
+          key={row.person}
+          onClick={() => onSelectPerson(row.person)}
+          className={`rounded-lg border p-3 text-left transition ${
+            selectedPerson === row.person
+              ? "border-emerald-300 bg-emerald-50"
+              : "border-slate-200 bg-white"
+          }`}
+        >
           <div>
             <h4 className="text-sm font-bold text-slate-950">{row.person}</h4>
             <p
@@ -25,7 +34,7 @@ export const SummaryTable = ({ rows }) => (
             <p>Spent: <span className="text-slate-800">{formatCurrency(row.spent)}</span></p>
             <p>Share: <span className="text-slate-800">{formatCurrency(row.share)}</span></p>
           </div>
-        </article>
+        </button>
       ))}
     </div>
 
@@ -42,7 +51,13 @@ export const SummaryTable = ({ rows }) => (
           </thead>
           <tbody className="divide-y divide-slate-100">
             {rows.map((row) => (
-              <tr key={row.person}>
+              <tr
+                key={row.person}
+                onClick={() => onSelectPerson(row.person)}
+                className={`cursor-pointer transition ${
+                  selectedPerson === row.person ? "bg-emerald-50" : "hover:bg-slate-50"
+                }`}
+              >
                 <td className="px-4 py-2 text-left text-sm font-semibold text-slate-950">
                   {row.person}
                 </td>
