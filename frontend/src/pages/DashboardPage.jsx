@@ -1,5 +1,6 @@
 import { Plus, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import ConfirmHideModal from "../components/ConfirmHideModal";
 import ExpenseDetailsModal from "../components/ExpenseDetailsModal";
 import ExpenseTable from "../components/ExpenseTable";
 import PageShell from "../components/PageShell";
@@ -21,6 +22,8 @@ const DashboardPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hidingId, setHidingId] = useState("");
+  const [expenseToHide, setExpenseToHide] = useState(null);
+  const [hideError, setHideError] = useState("");
   const [savingId, setSavingId] = useState("");
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [modalMode, setModalMode] = useState("details");
@@ -94,8 +97,30 @@ const DashboardPage = () => {
     }
   };
 
-  const handleHide = async (expenseId) => {
+  const openHideConfirmation = (expense) => {
+    setExpenseToHide(expense);
+    setHideError("");
+    setError("");
+    setSuccess("");
+  };
+
+  const closeHideConfirmation = () => {
+    if (hidingId) {
+      return;
+    }
+
+    setExpenseToHide(null);
+    setHideError("");
+  };
+
+  const handleHide = async () => {
+    if (!expenseToHide) {
+      return;
+    }
+
+    const expenseId = expenseToHide._id;
     setHidingId(expenseId);
+    setHideError("");
     setError("");
     setSuccess("");
 
@@ -103,8 +128,9 @@ const DashboardPage = () => {
       await expenseApi.hide(expenseId);
       setExpenses((current) => current.filter((expense) => expense._id !== expenseId));
       setSuccess("Expense hidden. It is no longer included in calculations.");
+      setExpenseToHide(null);
     } catch (err) {
-      setError(err.message);
+      setHideError(err.message);
     } finally {
       setHidingId("");
     }
@@ -266,7 +292,7 @@ const DashboardPage = () => {
           </div>
           <ExpenseTable
             expenses={expenses}
-            onHide={handleHide}
+            onHide={openHideConfirmation}
             onEdit={openEdit}
             onView={openDetails}
             hidingId={hidingId}
@@ -280,6 +306,13 @@ const DashboardPage = () => {
         onClose={closeModal}
         onSave={handleUpdate}
         isSaving={Boolean(savingId)}
+      />
+      <ConfirmHideModal
+        expense={expenseToHide}
+        onCancel={closeHideConfirmation}
+        onConfirm={handleHide}
+        isHiding={Boolean(hidingId)}
+        error={hideError}
       />
     </PageShell>
   );

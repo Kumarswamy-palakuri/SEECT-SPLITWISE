@@ -64,7 +64,7 @@ const ExpenseTable = ({ expenses, onHide, onEdit, onView, hidingId }) => (
               </button>
               <button
                 type="button"
-                onClick={() => onHide(expense._id)}
+                onClick={() => onHide(expense)}
                 disabled={hidingId === expense._id}
                 className="focus-ring inline-flex h-11 items-center justify-center gap-1 rounded-md border border-slate-200 text-sm font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -146,7 +146,7 @@ const ExpenseTable = ({ expenses, onHide, onEdit, onView, hidingId }) => (
                         type="button"
                         title="Hide expense"
                         aria-label="Hide expense"
-                        onClick={() => onHide(expense._id)}
+                        onClick={() => onHide(expense)}
                         disabled={hidingId === expense._id}
                         className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                       >
