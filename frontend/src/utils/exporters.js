@@ -1,4 +1,4 @@
-import { formatCurrency } from "./splitCalculator";
+import { formatCurrency, getExpenseCents } from "./splitCalculator";
 
 export const exportSummaryPdf = async (element) => {
   if (!element) {
@@ -60,7 +60,37 @@ const downloadFile = (content, filename, type) => {
   URL.revokeObjectURL(url);
 };
 
-export const exportSummaryExcel = ({ summaryRows, settlements, totalExpense, generatedAt }) => {
+const formatDate = (value) => new Date(value).toLocaleDateString();
+
+const filenameMonth = (monthLabel) =>
+  String(monthLabel || "selected-month")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+export const exportSummaryExcel = ({
+  expenses = [],
+  summaryRows,
+  settlements,
+  totalExpense,
+  generatedAt,
+  monthLabel
+}) => {
+  const transactionRowsHtml = expenses.length
+    ? expenses
+        .map(
+          (expense) => `
+            <tr>
+              <td>${escapeHtml(formatDate(expense.date))}</td>
+              <td>${escapeHtml(expense.remarks || "Expense")}</td>
+              <td>${escapeHtml(expense.paidBy)}</td>
+              <td>${escapeHtml((expense.participants || []).join(", "))}</td>
+              <td>${escapeHtml(formatCurrency(getExpenseCents(expense) / 100))}</td>
+            </tr>`
+        )
+        .join("")
+    : "<tr><td colspan=\"5\">No transactions for this month.</td></tr>";
+
   const summaryRowsHtml = summaryRows
     .map(
       (row) => `
@@ -93,8 +123,23 @@ export const exportSummaryExcel = ({ summaryRows, settlements, totalExpense, gen
       </head>
       <body>
         <h1>Expense Summary Report</h1>
+        <p><strong>Month:</strong> ${escapeHtml(monthLabel)}</p>
         <p><strong>Generated At:</strong> ${escapeHtml(generatedAt)}</p>
         <p><strong>Total Group Expense:</strong> ${escapeHtml(formatCurrency(totalExpense))}</p>
+
+        <h2>Transactions</h2>
+        <table border="1">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Remarks</th>
+              <th>Paid By</th>
+              <th>Participants</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>${transactionRowsHtml}</tbody>
+        </table>
 
         <h2>Summary</h2>
         <table border="1">
@@ -123,5 +168,9 @@ export const exportSummaryExcel = ({ summaryRows, settlements, totalExpense, gen
       </body>
     </html>`;
 
-  downloadFile(workbookHtml, "expense-summary.xls", "application/vnd.ms-excel;charset=utf-8");
+  downloadFile(
+    workbookHtml,
+    `expense-summary-${filenameMonth(monthLabel)}.xls`,
+    "application/vnd.ms-excel;charset=utf-8"
+  );
 };

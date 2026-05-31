@@ -1,11 +1,13 @@
 import { Save, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { GROUP_MEMBERS } from "../constants";
+import { dateInputToIsoDate, getDateInputValue } from "../utils/monthFilters";
 import { formatCurrency, getExpenseCents } from "../utils/splitCalculator";
 import StatusMessage from "./StatusMessage";
 
 const ExpenseDetailsModal = ({ expense, mode, onClose, onSave, isSaving }) => {
   const [form, setForm] = useState({
+    date: getDateInputValue(),
     amount: "",
     remarks: "",
     paidBy: GROUP_MEMBERS[0],
@@ -20,6 +22,7 @@ const ExpenseDetailsModal = ({ expense, mode, onClose, onSave, isSaving }) => {
     }
 
     setForm({
+      date: getDateInputValue(expense.date),
       amount: String(expense.amount || ""),
       remarks: expense.remarks || "",
       paidBy: expense.paidBy || GROUP_MEMBERS[0],
@@ -66,7 +69,15 @@ const ExpenseDetailsModal = ({ expense, mode, onClose, onSave, isSaving }) => {
       return;
     }
 
+    const expenseDate = dateInputToIsoDate(form.date);
+
+    if (!expenseDate) {
+      setError("Date must be valid.");
+      return;
+    }
+
     await onSave({
+      date: expenseDate,
       amount: Number(form.amount),
       remarks: form.remarks,
       paidBy: form.paidBy,
@@ -100,6 +111,19 @@ const ExpenseDetailsModal = ({ expense, mode, onClose, onSave, isSaving }) => {
         {isEditing ? (
           <form className="space-y-4 p-4 sm:p-5" onSubmit={handleSubmit}>
             <StatusMessage message={error} tone="error" />
+
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700">Date</span>
+              <input
+                className="focus-ring mt-1 h-11 w-full rounded-md border border-slate-300 px-3 text-slate-950"
+                type="date"
+                value={form.date}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, date: event.target.value }))
+                }
+                required
+              />
+            </label>
 
             <label className="block">
               <span className="text-sm font-semibold text-slate-700">Paid By</span>

@@ -4,9 +4,10 @@ import { Expense } from "../models/Expense.js";
 
 const router = express.Router();
 
-const validateExpenseInput = ({ amount, paidBy, participants }) => {
+const validateExpenseInput = ({ amount, paidBy, participants, date }) => {
   const numericAmount = Number(amount);
   const uniqueParticipants = [...new Set(participants || [])];
+  const hasDate = date !== undefined && date !== null && date !== "";
 
   if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
     return { message: "Amount must be greater than 0." };
@@ -30,11 +31,17 @@ const validateExpenseInput = ({ amount, paidBy, participants }) => {
   }
 
   const amountCents = Math.round(numericAmount * 100);
+  const expenseDate = hasDate ? new Date(date) : undefined;
+
+  if (hasDate && Number.isNaN(expenseDate.getTime())) {
+    return { message: "Date must be valid." };
+  }
 
   return {
     amount: amountCents / 100,
     amountCents,
-    participants: uniqueParticipants
+    participants: uniqueParticipants,
+    date: expenseDate
   };
 };
 
@@ -63,8 +70,8 @@ router.get("/", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const { amount, remarks, paidBy, participants } = req.body;
-    const validation = validateExpenseInput({ amount, paidBy, participants });
+    const { amount, remarks, paidBy, participants, date } = req.body;
+    const validation = validateExpenseInput({ amount, paidBy, participants, date });
 
     if (validation.message) {
       return res.status(400).json({ message: validation.message });
@@ -75,7 +82,8 @@ router.post("/", async (req, res, next) => {
       amountCents: validation.amountCents,
       remarks,
       paidBy,
-      participants: validation.participants
+      participants: validation.participants,
+      ...(validation.date ? { date: validation.date } : {})
     });
 
     res.status(201).json({ expense: serializeExpense(expense) });
@@ -86,22 +94,25 @@ router.post("/", async (req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    const { amount, remarks, paidBy, participants } = req.body;
-    const validation = validateExpenseInput({ amount, paidBy, participants });
+    const { amount, remarks, paidBy, participants, date } = req.body;
+    const validation = validateExpenseInput({ amount, paidBy, participants, date });
 
     if (validation.message) {
       return res.status(400).json({ message: validation.message });
     }
 
+    const updates = {
+      amount: validation.amount,
+      amountCents: validation.amountCents,
+      remarks,
+      paidBy,
+      participants: validation.participants,
+      ...(validation.date ? { date: validation.date } : {})
+    };
+
     const expense = await Expense.findByIdAndUpdate(
       req.params.id,
-      {
-        amount: validation.amount,
-        amountCents: validation.amountCents,
-        remarks,
-        paidBy,
-        participants: validation.participants
-      },
+      updates,
       { new: true, runValidators: true }
     );
 
