@@ -90,18 +90,15 @@ const SummaryPage = () => {
 
   return (
     <PageShell>
-      <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">Summary</h2>
-          <p className="mt-1 text-sm font-medium text-slate-500">
-            {selectedMonthLabel} total: {formatCurrency(totalExpense)}
-          </p>
-        </div>
+      <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5 sm:items-end">
+        <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">Summary</h2>
         <MonthSelector
           id="summary-month"
+          label=""
           value={selectedMonth}
           options={monthOptions}
           onChange={setSelectedMonth}
+          className="w-44 shrink-0 sm:w-64"
         />
       </div>
 
@@ -127,17 +124,6 @@ const SummaryPage = () => {
             <div className="rounded-md bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800">
               Total: {formatCurrency(totalExpense)}
             </div>
-          </div>
-
-          <div>
-            <h3 className="mb-2 text-base font-bold text-slate-950 sm:mb-3 sm:text-lg">
-              Transactions
-            </h3>
-            <ExpenseTable
-              expenses={filteredExpenses}
-              isReadOnly
-              emptyMessage={`No transactions for ${selectedMonthLabel}.`}
-            />
           </div>
 
           <div>
@@ -176,6 +162,17 @@ const SummaryPage = () => {
               <Sheet size={18} />
               Excel
             </button>
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-base font-bold text-slate-950 sm:mb-3 sm:text-lg">
+              Transactions
+            </h3>
+            <ExpenseTable
+              expenses={filteredExpenses}
+              isReadOnly
+              emptyMessage={`No transactions for ${selectedMonthLabel}.`}
+            />
           </div>
         </section>
       )}

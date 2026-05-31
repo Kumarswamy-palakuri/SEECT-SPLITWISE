@@ -3,18 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import ConfirmHideModal from "../components/ConfirmHideModal";
 import ExpenseDetailsModal from "../components/ExpenseDetailsModal";
 import ExpenseTable from "../components/ExpenseTable";
-import MonthSelector from "../components/MonthSelector";
 import PageShell from "../components/PageShell";
 import StatusMessage from "../components/StatusMessage";
 import { GROUP_MEMBERS } from "../constants";
 import { expenseApi } from "../services/api";
-import {
-  buildMonthOptions,
-  filterExpensesByMonth,
-  formatMonthLabel,
-  getCurrentMonthKey,
-  getExpenseMonthKey
-} from "../utils/monthFilters";
 import { formatCurrency, getTotalExpense } from "../utils/splitCalculator";
 
 const DashboardPage = () => {
@@ -35,18 +27,8 @@ const DashboardPage = () => {
   const [savingId, setSavingId] = useState("");
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [modalMode, setModalMode] = useState("details");
-  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey());
 
-  const monthOptions = useMemo(
-    () => buildMonthOptions(expenses, selectedMonth),
-    [expenses, selectedMonth]
-  );
-  const filteredExpenses = useMemo(
-    () => filterExpensesByMonth(expenses, selectedMonth),
-    [expenses, selectedMonth]
-  );
-  const selectedMonthLabel = useMemo(() => formatMonthLabel(selectedMonth), [selectedMonth]);
-  const totalExpense = useMemo(() => getTotalExpense(filteredExpenses), [filteredExpenses]);
+  const totalExpense = useMemo(() => getTotalExpense(expenses), [expenses]);
 
   const loadExpenses = async () => {
     setIsLoading(true);
@@ -101,7 +83,6 @@ const DashboardPage = () => {
         participants: form.participants
       });
       setExpenses((current) => [payload.expense, ...current]);
-      setSelectedMonth(getExpenseMonthKey(payload.expense) || selectedMonth);
       setForm({
         amount: "",
         remarks: "",
@@ -184,7 +165,6 @@ const DashboardPage = () => {
       setExpenses((current) =>
         current.map((expense) => (expense._id === payload.expense._id ? payload.expense : expense))
       );
-      setSelectedMonth(getExpenseMonthKey(payload.expense) || selectedMonth);
       setSuccess("Expense updated.");
       closeModal();
     } catch (err) {
@@ -200,15 +180,9 @@ const DashboardPage = () => {
         <div>
           <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">Dashboard</h2>
           <p className="mt-1 text-sm font-medium text-slate-500">
-            Showing {selectedMonthLabel}
+            Showing all expenses
           </p>
         </div>
-        <MonthSelector
-          id="dashboard-month"
-          value={selectedMonth}
-          options={monthOptions}
-          onChange={setSelectedMonth}
-        />
       </div>
 
       <div className="mb-4 grid grid-cols-3 gap-2 sm:mb-6 sm:gap-4">
@@ -221,7 +195,7 @@ const DashboardPage = () => {
         <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-soft sm:p-5">
           <p className="text-xs font-semibold text-slate-500 sm:text-sm">Entries</p>
           <p className="mt-1 text-base font-bold text-slate-950 sm:mt-2 sm:text-2xl">
-            {filteredExpenses.length}
+            {expenses.length}
           </p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-soft sm:p-5">
@@ -326,12 +300,12 @@ const DashboardPage = () => {
             {isLoading && <span className="text-sm font-semibold text-slate-500">Loading...</span>}
           </div>
           <ExpenseTable
-            expenses={filteredExpenses}
+            expenses={expenses}
             onHide={openHideConfirmation}
             onEdit={openEdit}
             onView={openDetails}
             hidingId={hidingId}
-            emptyMessage={`No expenses for ${selectedMonthLabel}.`}
+            emptyMessage="No expenses yet."
           />
         </section>
       </div>

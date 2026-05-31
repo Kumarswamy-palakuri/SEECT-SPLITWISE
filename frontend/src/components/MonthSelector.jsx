@@ -1,7 +1,14 @@
 import { CalendarDays, Check, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const MonthSelector = ({ id = "month-selector", label = "Month", value, options, onChange }) => {
+const MonthSelector = ({
+  id = "month-selector",
+  label = "Month",
+  value,
+  options,
+  onChange,
+  className = "w-full sm:w-64"
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef(null);
   const selectedOption = useMemo(
@@ -26,12 +33,15 @@ const MonthSelector = ({ id = "month-selector", label = "Month", value, options,
   };
 
   return (
-    <div ref={rootRef} className="relative w-full sm:w-64">
-      <span className="mb-1.5 block text-xs font-bold uppercase text-slate-500">{label}</span>
+    <div ref={rootRef} className={`relative ${className}`}>
+      {label && (
+        <span className="mb-1.5 block text-xs font-bold uppercase text-slate-500">{label}</span>
+      )}
       <button
         id={id}
         type="button"
         className="focus-ring flex h-11 w-full items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-left shadow-sm transition hover:border-emerald-300"
+        aria-label={label || "Select month"}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
