@@ -7,6 +7,11 @@ import PageShell from "../components/PageShell";
 import StatusMessage from "../components/StatusMessage";
 import { GROUP_MEMBERS } from "../constants";
 import { expenseApi } from "../services/api";
+import {
+  filterExpensesByMonth,
+  formatMonthLabel,
+  getCurrentMonthKey
+} from "../utils/monthFilters";
 import { formatCurrency, getTotalExpense } from "../utils/splitCalculator";
 
 const DashboardPage = () => {
@@ -28,7 +33,13 @@ const DashboardPage = () => {
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [modalMode, setModalMode] = useState("details");
 
-  const totalExpense = useMemo(() => getTotalExpense(expenses), [expenses]);
+  const currentMonthKey = getCurrentMonthKey();
+  const currentMonthLabel = useMemo(() => formatMonthLabel(currentMonthKey), [currentMonthKey]);
+  const currentMonthExpenses = useMemo(
+    () => filterExpensesByMonth(expenses, currentMonthKey),
+    [expenses, currentMonthKey]
+  );
+  const totalExpense = useMemo(() => getTotalExpense(currentMonthExpenses), [currentMonthExpenses]);
 
   const loadExpenses = async () => {
     setIsLoading(true);
@@ -180,7 +191,7 @@ const DashboardPage = () => {
         <div>
           <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">Dashboard</h2>
           <p className="mt-1 text-sm font-medium text-slate-500">
-            Showing all expenses
+            Showing {currentMonthLabel} only
           </p>
         </div>
       </div>
@@ -195,7 +206,7 @@ const DashboardPage = () => {
         <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-soft sm:p-5">
           <p className="text-xs font-semibold text-slate-500 sm:text-sm">Entries</p>
           <p className="mt-1 text-base font-bold text-slate-950 sm:mt-2 sm:text-2xl">
-            {expenses.length}
+            {currentMonthExpenses.length}
           </p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-soft sm:p-5">
@@ -300,12 +311,12 @@ const DashboardPage = () => {
             {isLoading && <span className="text-sm font-semibold text-slate-500">Loading...</span>}
           </div>
           <ExpenseTable
-            expenses={expenses}
+            expenses={currentMonthExpenses}
             onHide={openHideConfirmation}
             onEdit={openEdit}
             onView={openDetails}
             hidingId={hidingId}
-            emptyMessage="No expenses yet."
+            emptyMessage={`No expenses for ${currentMonthLabel}.`}
           />
         </section>
       </div>
