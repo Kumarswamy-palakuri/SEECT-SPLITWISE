@@ -1,10 +1,11 @@
-import { Plus, Users } from "lucide-react";
+import { Plus, Tag, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import ConfirmHideModal from "../components/ConfirmHideModal";
 import ExpenseDetailsModal from "../components/ExpenseDetailsModal";
 import ExpenseTable from "../components/ExpenseTable";
 import PageShell from "../components/PageShell";
 import StatusMessage from "../components/StatusMessage";
+import TagSuggestions from "../components/TagSuggestions";
 import { GROUP_MEMBERS } from "../constants";
 import { expenseApi } from "../services/api";
 import {
@@ -13,6 +14,7 @@ import {
   getCurrentMonthKey
 } from "../utils/monthFilters";
 import { formatCurrency, getTotalExpense } from "../utils/splitCalculator";
+import { appendTagToRemarks, parseTags } from "../utils/tagUtils";
 
 const DashboardPage = () => {
   const [expenses, setExpenses] = useState([]);
@@ -243,7 +245,7 @@ const DashboardPage = () => {
               </select>
             </label>
 
-            <label className="block">
+            <div className="block">
               <span className="text-sm font-semibold text-slate-700">Remarks</span>
               <textarea
                 className="focus-ring mt-1 h-16 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-950"
@@ -253,7 +255,31 @@ const DashboardPage = () => {
                 }
                 placeholder="Dinner, groceries, fuel..."
               />
-            </label>
+              <TagSuggestions
+                remarks={form.remarks}
+                expenses={expenses}
+                onSelectTag={(selectedTag) =>
+                  setForm((current) => ({
+                    ...current,
+                    remarks: appendTagToRemarks(current.remarks, selectedTag)
+                  }))
+                }
+              />
+              {parseTags(form.remarks).length > 0 && (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-semibold text-slate-500">Extracted Tags:</span>
+                  {parseTags(form.remarks).map((tag, idx) => (
+                    <span
+                      key={`${tag}-${idx}`}
+                      className="inline-flex items-center gap-1 rounded-md border border-indigo-200/80 bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700"
+                    >
+                      <Tag size={12} className="text-indigo-500" />
+                      {tag.startsWith("#") ? tag : `#${tag}`}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <label className="block">
               <span className="text-sm font-semibold text-slate-700">Amount</span>
@@ -327,6 +353,7 @@ const DashboardPage = () => {
         onClose={closeModal}
         onSave={handleUpdate}
         isSaving={Boolean(savingId)}
+        expenses={expenses}
       />
       <ConfirmHideModal
         expense={expenseToHide}

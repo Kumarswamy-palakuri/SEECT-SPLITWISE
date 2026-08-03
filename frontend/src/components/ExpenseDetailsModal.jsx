@@ -1,11 +1,13 @@
-import { Save, X } from "lucide-react";
+import { Save, Tag, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { GROUP_MEMBERS } from "../constants";
 import { dateInputToIsoDate, getDateInputValue } from "../utils/monthFilters";
 import { formatCurrency, getExpenseCents } from "../utils/splitCalculator";
+import { appendTagToRemarks, parseTags } from "../utils/tagUtils";
 import StatusMessage from "./StatusMessage";
+import TagSuggestions from "./TagSuggestions";
 
-const ExpenseDetailsModal = ({ expense, mode, onClose, onSave, isSaving }) => {
+const ExpenseDetailsModal = ({ expense, mode, onClose, onSave, isSaving, expenses = [] }) => {
   const [form, setForm] = useState({
     date: getDateInputValue(),
     amount: "",
@@ -142,7 +144,7 @@ const ExpenseDetailsModal = ({ expense, mode, onClose, onSave, isSaving }) => {
               </select>
             </label>
 
-            <label className="block">
+            <div className="block">
               <span className="text-sm font-semibold text-slate-700">Remarks</span>
               <textarea
                 className="focus-ring mt-1 h-16 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-950"
@@ -151,7 +153,31 @@ const ExpenseDetailsModal = ({ expense, mode, onClose, onSave, isSaving }) => {
                   setForm((current) => ({ ...current, remarks: event.target.value }))
                 }
               />
-            </label>
+              <TagSuggestions
+                remarks={form.remarks}
+                expenses={expenses}
+                onSelectTag={(selectedTag) =>
+                  setForm((current) => ({
+                    ...current,
+                    remarks: appendTagToRemarks(current.remarks, selectedTag)
+                  }))
+                }
+              />
+              {parseTags(form.remarks).length > 0 && (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-semibold text-slate-500">Extracted Tags:</span>
+                  {parseTags(form.remarks).map((tag, idx) => (
+                    <span
+                      key={`${tag}-${idx}`}
+                      className="inline-flex items-center gap-1 rounded-md border border-indigo-200/80 bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700"
+                    >
+                      <Tag size={12} className="text-indigo-500" />
+                      {tag.startsWith("#") ? tag : `#${tag}`}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <label className="block">
               <span className="text-sm font-semibold text-slate-700">Amount</span>
@@ -227,9 +253,22 @@ const ExpenseDetailsModal = ({ expense, mode, onClose, onSave, isSaving }) => {
 
             <div>
               <p className="text-sm font-semibold text-slate-700">Remarks</p>
-              <p className="mt-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                {expense.remarks || "No remarks added."}
-              </p>
+              <div className="mt-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                <p>{expense.remarks || "No remarks added."}</p>
+                {parseTags(expense.remarks).length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5 border-t border-slate-100 pt-2">
+                    {parseTags(expense.remarks).map((tag, idx) => (
+                      <span
+                        key={`${tag}-${idx}`}
+                        className="inline-flex items-center gap-1 rounded-md border border-indigo-200/80 bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700"
+                      >
+                        <Tag size={12} className="text-indigo-500" />
+                        {tag.startsWith("#") ? tag : `#${tag}`}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>

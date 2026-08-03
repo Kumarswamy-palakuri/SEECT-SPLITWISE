@@ -1,13 +1,39 @@
-import { Eye, EyeOff, Pencil } from "lucide-react";
+import { Eye, EyeOff, Pencil, Tag } from "lucide-react";
 import { formatCurrency } from "../utils/splitCalculator";
+import { parseTags } from "../utils/tagUtils";
+
+const RemarksDisplay = ({ remarks }) => {
+  if (!remarks) {
+    return <span className="italic text-slate-400">Expense</span>;
+  }
+
+  const tags = parseTags(remarks);
+
+  return (
+    <div className="space-y-1">
+      <p className="font-semibold text-slate-900">{remarks}</p>
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {tags.map((tag, idx) => (
+            <span
+              key={`${tag}-${idx}`}
+              className="inline-flex items-center gap-0.5 rounded-md border border-indigo-200/80 bg-indigo-50 px-1.5 py-0.5 text-[11px] font-semibold text-indigo-700"
+            >
+              <Tag size={10} className="text-indigo-500" />
+              {tag.startsWith("#") ? tag : `#${tag}`}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ExpenseSummary = ({ expense }) => (
   <>
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <h3 className="truncate text-base font-bold text-slate-950">
-          {expense.remarks || "Expense"}
-        </h3>
+        <RemarksDisplay remarks={expense.remarks} />
         <p className="mt-1 text-xs font-semibold text-slate-500">
           {new Date(expense.date).toLocaleDateString()} - Paid by {expense.paidBy}
         </p>
@@ -132,7 +158,7 @@ const ExpenseTable = ({
                       {new Date(expense.date).toLocaleDateString()}
                     </td>
                     <td className="table-cell font-medium text-slate-900">
-                      {expense.remarks || "Expense"}
+                      <RemarksDisplay remarks={expense.remarks} />
                     </td>
                     <td className="table-cell text-slate-700">{expense.paidBy}</td>
                     <td className="table-cell text-slate-600">

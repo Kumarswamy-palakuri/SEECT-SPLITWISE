@@ -6,6 +6,7 @@ import PageShell from "../components/PageShell";
 import PersonPaidExpenses from "../components/PersonPaidExpenses";
 import StatusMessage from "../components/StatusMessage";
 import { SettlementTable, SummaryTable } from "../components/SummaryTables";
+import TagAnalytics from "../components/TagAnalytics";
 import { expenseApi } from "../services/api";
 import { exportSummaryExcel, exportSummaryPdf } from "../utils/exporters";
 import {
@@ -20,6 +21,7 @@ import {
   formatCurrency,
   getTotalExpense
 } from "../utils/splitCalculator";
+import { parseTags } from "../utils/tagUtils";
 
 const SummaryPage = () => {
   const [expenses, setExpenses] = useState([]);
@@ -27,6 +29,7 @@ const SummaryPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
+  const [selectedTag, setSelectedTag] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey());
   const reportRef = useRef(null);
 
@@ -47,6 +50,17 @@ const SummaryPage = () => {
     [filteredExpenses.length, selectedMonth]
   );
 
+  const displayedExpenses = useMemo(() => {
+    if (!selectedTag) {
+      return filteredExpenses;
+    }
+    const cleanTag = selectedTag.replace(/^#/, "").toLowerCase();
+    return filteredExpenses.filter((expense) => {
+      const tags = parseTags(expense.remarks);
+      return tags.some((t) => t.replace(/^#/, "").toLowerCase() === cleanTag);
+    });
+  }, [filteredExpenses, selectedTag]);
+
   useEffect(() => {
     const loadExpenses = async () => {
       try {
@@ -64,6 +78,7 @@ const SummaryPage = () => {
 
   useEffect(() => {
     setSelectedPerson(null);
+    setSelectedTag(null);
   }, [selectedMonth]);
 
   const handlePdfExport = async () => {
@@ -144,6 +159,12 @@ const SummaryPage = () => {
             <SettlementTable settlements={settlements} />
           </div>
 
+          <TagAnalytics
+            expenses={filteredExpenses}
+            selectedTag={selectedTag}
+            onSelectTag={setSelectedTag}
+          />
+
           <div className="grid grid-cols-2 gap-2 border-t border-slate-200 pt-4 sm:flex sm:flex-wrap sm:justify-end">
             <button
               type="button"
@@ -165,13 +186,31 @@ const SummaryPage = () => {
           </div>
 
           <div>
-            <h3 className="mb-2 text-base font-bold text-slate-950 sm:mb-3 sm:text-lg">
-              Transactions
-            </h3>
+            <div className="mb-2 flex items-center justify-between gap-3 sm:mb-3">
+              <h3 className="text-base font-bold text-slate-950 sm:text-lg">
+                Transactions
+              </h3>
+              {selectedTag && (
+                <div className="flex items-center gap-2 text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100">
+                  <span>Filtered by {selectedTag.startsWith('#') ? selectedTag : `#${selectedTag}`}</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTag(null)}
+                    className="font-bold underline hover:text-indigo-900"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
+            </div>
             <ExpenseTable
-              expenses={filteredExpenses}
+              expenses={displayedExpenses}
               isReadOnly
-              emptyMessage={`No transactions for ${selectedMonthLabel}.`}
+              emptyMessage={
+                selectedTag
+                  ? `No transactions matching tag "${selectedTag}".`
+                  : `No transactions for ${selectedMonthLabel}.`
+              }
             />
           </div>
         </section>
