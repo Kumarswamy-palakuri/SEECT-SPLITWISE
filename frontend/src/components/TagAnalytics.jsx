@@ -1,11 +1,20 @@
-import { Hash, Tag, X } from "lucide-react";
-import { useMemo } from "react";
+import { ChevronDown, ChevronUp, Hash, Tag, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { formatCurrency } from "../utils/splitCalculator";
 import { getTagAnalytics } from "../utils/tagUtils";
 
+const VISIBLE_TAG_LIMIT = 6;
+
 const TagAnalytics = ({ expenses = [], selectedTag = null, onSelectTag }) => {
+  const [showAllTags, setShowAllTags] = useState(false);
   const analytics = useMemo(() => getTagAnalytics(expenses), [expenses]);
   const totalTags = analytics.length;
+  const hiddenTagCount = Math.max(totalTags - VISIBLE_TAG_LIMIT, 0);
+  const visibleAnalytics = showAllTags ? analytics : analytics.slice(0, VISIBLE_TAG_LIMIT);
+
+  useEffect(() => {
+    setShowAllTags(false);
+  }, [expenses]);
 
   if (totalTags === 0) {
     return (
@@ -40,7 +49,7 @@ const TagAnalytics = ({ expenses = [], selectedTag = null, onSelectTag }) => {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2.5">
-        {analytics.map(({ tag, displayTag, count, totalAmount }) => {
+        {visibleAnalytics.map(({ tag, displayTag, count, totalAmount }) => {
           const isSelected = selectedTag && selectedTag.toLowerCase() === tag.toLowerCase();
 
           return (
@@ -75,6 +84,17 @@ const TagAnalytics = ({ expenses = [], selectedTag = null, onSelectTag }) => {
             </button>
           );
         })}
+
+        {hiddenTagCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowAllTags((current) => !current)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-indigo-200 bg-white px-3 py-2 text-xs font-bold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-900"
+          >
+            {showAllTags ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {showAllTags ? "Show less" : `Show more (${hiddenTagCount})`}
+          </button>
+        )}
       </div>
     </div>
   );
