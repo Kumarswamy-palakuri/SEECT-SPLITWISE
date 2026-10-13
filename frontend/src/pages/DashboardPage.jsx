@@ -6,7 +6,7 @@ import ExpenseTable from "../components/ExpenseTable";
 import PageShell from "../components/PageShell";
 import StatusMessage from "../components/StatusMessage";
 import TagSuggestions from "../components/TagSuggestions";
-import { GROUP_MEMBERS } from "../constants";
+import { GROUP_MEMBERS, STORAGE_KEYS } from "../constants";
 import { expenseApi } from "../services/api";
 import {
   filterExpensesByMonth,
@@ -16,13 +16,38 @@ import {
 import { formatCurrency, getTotalExpense } from "../utils/splitCalculator";
 import { appendTagToRemarks, parseTags } from "../utils/tagUtils";
 
+const getInitialPaidBy = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.lastPaidBy);
+    if (saved && GROUP_MEMBERS.includes(saved)) {
+      return saved;
+    }
+  } catch {
+    // ignore localStorage errors
+  }
+  return GROUP_MEMBERS[0];
+};
+
+const saveLastPaidBy = (paidBy) => {
+  try {
+    if (paidBy && GROUP_MEMBERS.includes(paidBy)) {
+      localStorage.setItem(STORAGE_KEYS.lastPaidBy, paidBy);
+    }
+  } catch {
+    // ignore localStorage errors
+  }
+};
+
 const DashboardPage = () => {
   const [expenses, setExpenses] = useState([]);
-  const [form, setForm] = useState({
-    amount: "",
-    remarks: "",
-    paidBy: GROUP_MEMBERS[0],
-    participants: [GROUP_MEMBERS[0]]
+  const [form, setForm] = useState(() => {
+    const defaultPaidBy = getInitialPaidBy();
+    return {
+      amount: "",
+      remarks: "",
+      paidBy: defaultPaidBy,
+      participants: [defaultPaidBy]
+    };
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -96,11 +121,12 @@ const DashboardPage = () => {
         participants: form.participants
       });
       setExpenses((current) => [payload.expense, ...current]);
+      saveLastPaidBy(form.paidBy);
       setForm({
         amount: "",
         remarks: "",
-        paidBy: GROUP_MEMBERS[0],
-        participants: [GROUP_MEMBERS[0]]
+        paidBy: form.paidBy,
+        participants: [form.paidBy]
       });
       setSuccess("Expense added.");
     } catch (err) {
@@ -233,9 +259,11 @@ const DashboardPage = () => {
               <select
                 className="focus-ring mt-1 h-11 w-full rounded-md border border-slate-300 px-3 text-slate-950"
                 value={form.paidBy}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, paidBy: event.target.value }))
-                }
+                onChange={(event) => {
+                  const selectedMember = event.target.value;
+                  saveLastPaidBy(selectedMember);
+                  setForm((current) => ({ ...current, paidBy: selectedMember }));
+                }}
               >
                 {GROUP_MEMBERS.map((member) => (
                   <option key={member} value={member}>
