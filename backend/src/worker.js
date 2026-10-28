@@ -7,19 +7,97 @@ const app = new Hono();
 
 let cachedClient = null;
 
+function isClientClosed(client) {
+  if (!client) return true;
+  try {
+    if (!client.topology) return false;
+    if (typeof client.topology.isDestroyed === "function" && client.topology.isDestroyed()) {
+      return true;
+    }
+    if (typeof client.topology.isClosed === "function" && client.topology.isClosed()) {
+      return true;
+    }
+    const state = client.topology.s?.state;
+    if (state === "closed" || state === "destroying") {
+      return true;
+    }
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+async function createClient(uri) {
+  const client = new MongoClient(uri, {
+    maxPoolSize: 1,
+    minPoolSize: 0,
+    serverSelectionTimeoutMS: 8000,
+    connectTimeoutMS: 10000,
+    maxIdleTimeMS: 15000
+  });
+  await client.connect();
+  return client;
+}
+
 async function getCollection(env) {
   const uri = env?.MONGO_URI || env?.MONGODB_URI || process.env?.MONGO_URI;
   if (!uri) {
-    throw new Error("MONGO_URI is missing. Please set MONGO_URI in Cloudflare Worker secrets or environment variables.");
+    throw new Error(
+      "MONGO_URI environment variable is missing. Set it via 'npx wrangler secret put MONGO_URI' or in your Cloudflare dashboard."
+    );
   }
 
-  if (!cachedClient) {
-    cachedClient = new MongoClient(uri);
-    await cachedClient.connect();
+  if (isClientClosed(cachedClient)) {
+    if (cachedClient) {
+      try {
+        await cachedClient.close();
+      } catch {}
+    }
+    cachedClient = await createClient(uri);
   }
 
   const dbName = uri.split("/").pop()?.split("?")[0] || "Splitwise";
   return cachedClient.db(dbName).collection("expenses");
+}
+
+async function withCollection(env, operation) {
+  try {
+    const collection = await getCollection(env);
+    return await operation(collection);
+  } catch (error) {
+    const isTopologyOrConnError =
+      error?.name === "MongoTopologyClosedError" ||
+      error?.name === "MongoServerSelectionError" ||
+      error?.name === "MongoNetworkError" ||
+      /topology is closed|connection closed|closed topology|timed out/i.test(error?.message || "");
+
+    if (isTopologyOrConnError) {
+      console.warn("MongoDB connection dropped or topology closed. Reconnecting fresh client and retrying...");
+      if (cachedClient) {
+        try {
+          await cachedClient.close();
+        } catch {}
+      }
+      cachedClient = null;
+
+      try {
+        const collection = await getCollection(env);
+        return await operation(collection);
+      } catch (retryError) {
+        // If it still fails, provide helpful troubleshooting for IP whitelist / Atlas
+        if (
+          retryError?.name === "MongoServerSelectionError" ||
+          /topology is closed|timed out/i.test(retryError?.message || "")
+        ) {
+          throw new Error(
+            `MongoDB connection failed (${retryError.message}). Please ensure '0.0.0.0/0' (Allow access from anywhere) is whitelisted in MongoDB Atlas -> Network Access.`
+          );
+        }
+        throw retryError;
+      }
+    }
+    throw error;
+  }
 }
 
 const validateExpenseInput = ({ amount, paidBy, participants, date }) => {
@@ -115,11 +193,12 @@ app.get("/health", (c) => {
 
 app.get("/expenses", async (c) => {
   try {
-    const collection = await getCollection(c.env);
-    const expenses = await collection
-      .find({ isHidden: { $ne: true } })
-      .sort({ date: -1, createdAt: -1 })
-      .toArray();
+    const expenses = await withCollection(c.env, async (collection) => {
+      return await collection
+        .find({ isHidden: { $ne: true } })
+        .sort({ date: -1, createdAt: -1 })
+        .toArray();
+    });
 
     return c.json({ expenses: expenses.map(serializeExpense) });
   } catch (error) {
@@ -137,22 +216,23 @@ app.post("/expenses", async (c) => {
       return c.json({ message: validation.message }, 400);
     }
 
-    const collection = await getCollection(c.env);
-    const now = new Date();
-    const doc = {
-      amount: validation.amount,
-      amountCents: validation.amountCents,
-      remarks: (body.remarks || "").trim(),
-      paidBy: validation.paidBy,
-      participants: validation.participants,
-      date: validation.date || now,
-      isHidden: false,
-      createdAt: now,
-      updatedAt: now
-    };
+    const createdExpense = await withCollection(c.env, async (collection) => {
+      const now = new Date();
+      const doc = {
+        amount: validation.amount,
+        amountCents: validation.amountCents,
+        remarks: (body.remarks || "").trim(),
+        paidBy: validation.paidBy,
+        participants: validation.participants,
+        date: validation.date || now,
+        isHidden: false,
+        createdAt: now,
+        updatedAt: now
+      };
 
-    const result = await collection.insertOne(doc);
-    const createdExpense = { ...doc, _id: result.insertedId };
+      const result = await collection.insertOne(doc);
+      return { ...doc, _id: result.insertedId };
+    });
 
     return c.json({ expense: serializeExpense(createdExpense) }, 201);
   } catch (error) {
@@ -178,23 +258,24 @@ app.put("/expenses/:id", async (c) => {
       return c.json({ message: validation.message }, 400);
     }
 
-    const collection = await getCollection(c.env);
-    const now = new Date();
-    const updates = {
-      amount: validation.amount,
-      amountCents: validation.amountCents,
-      remarks: (body.remarks || "").trim(),
-      paidBy: validation.paidBy,
-      participants: validation.participants,
-      ...(validation.date ? { date: validation.date } : {}),
-      updatedAt: now
-    };
+    const updated = await withCollection(c.env, async (collection) => {
+      const now = new Date();
+      const updates = {
+        amount: validation.amount,
+        amountCents: validation.amountCents,
+        remarks: (body.remarks || "").trim(),
+        paidBy: validation.paidBy,
+        participants: validation.participants,
+        ...(validation.date ? { date: validation.date } : {}),
+        updatedAt: now
+      };
 
-    const updated = await collection.findOneAndUpdate(
-      { _id: objectId },
-      { $set: updates },
-      { returnDocument: "after" }
-    );
+      return await collection.findOneAndUpdate(
+        { _id: objectId },
+        { $set: updates },
+        { returnDocument: "after" }
+      );
+    });
 
     if (!updated) {
       return c.json({ message: "Expense not found." }, 404);
@@ -217,12 +298,13 @@ app.patch("/expenses/:id/hide", async (c) => {
       return c.json({ message: "Invalid expense ID format." }, 400);
     }
 
-    const collection = await getCollection(c.env);
-    const updated = await collection.findOneAndUpdate(
-      { _id: objectId },
-      { $set: { isHidden: true, updatedAt: new Date() } },
-      { returnDocument: "after" }
-    );
+    const updated = await withCollection(c.env, async (collection) => {
+      return await collection.findOneAndUpdate(
+        { _id: objectId },
+        { $set: { isHidden: true, updatedAt: new Date() } },
+        { returnDocument: "after" }
+      );
+    });
 
     if (!updated) {
       return c.json({ message: "Expense not found." }, 404);
