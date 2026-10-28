@@ -5,3 +5,5 @@ dist/
 npm-debug.log*
 *.log
 .DS_Store
+.dev.vars
+.wrangler/

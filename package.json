@@ -11,6 +11,7 @@
     "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
     "build": "npm run build --workspace frontend",
     "build:backend": "npm run build --workspace backend",
+    "deploy:backend": "npm run deploy --workspace backend",
     "seed": "npm run seed --workspace backend",
     "start": "npm run start --workspace backend",
     "install:all": "npm install"
