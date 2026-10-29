@@ -138,6 +138,7 @@ router.patch("/:id/hide", async (req, res, next) => {
       return res.status(404).json({ message: "Expense not found." });
     }
 
+    
     res.json({ message: "Expense hidden.", expense: serializeExpense(expense) });
   } catch (error) {
     next(error);
