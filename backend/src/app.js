@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import morgan from "morgan";
+import { connectDatabase } from "./config/db.js";
 import expenseRoutes from "./routes/expenses.js";
 
 export const app = express();
@@ -42,8 +43,26 @@ app.use(
 app.use(express.json());
 app.use(morgan("dev"));
 
+app.get("/", (req, res) => {
+  res.json({ status: "ok", message: "Expense Splitter API is running." });
+});
+
 app.get("/health", (req, res) => {
   res.json({ status: "ok", service: "expense-splitter-api" });
+});
+
+// Ensure database connection for API routes in serverless environments (Vercel)
+app.use(async (req, res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (error) {
+    console.error("Database connection error:", error.message);
+    res.status(500).json({
+      message: "Database connection failed. Please ensure MONGO_URI is configured in Vercel and MongoDB Atlas allows 0.0.0.0/0.",
+      error: error.message
+    });
+  }
 });
 
 app.use("/expenses", expenseRoutes);
@@ -66,3 +85,5 @@ app.use((error, req, res, next) => {
 
   res.status(500).json({ message: "Something went wrong on the server." });
 });
+
+export default app;
