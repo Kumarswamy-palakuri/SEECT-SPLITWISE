@@ -1,12 +1,14 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = rawApiUrl.replace(/\/+$/, "");
 
 const request = async (path, options = {}) => {
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
   const headers = {
     "Content-Type": "application/json",
     ...(options.token ? { Authorization: `Bearer ${options.token}` } : {})
   };
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${API_URL}${cleanPath}`, {
     method: options.method || "GET",
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined

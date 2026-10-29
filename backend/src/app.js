@@ -22,7 +22,7 @@ const isAllowedOrigin = (origin) => {
 
   try {
     const { hostname, protocol } = new URL(origin);
-    return protocol === "https:" && hostname.endsWith(".vercel.app");
+    return protocol === "https:" && (hostname.endsWith(".vercel.app") || hostname.endsWith(".pages.dev"));
   } catch {
     return false;
   }
@@ -37,7 +37,9 @@ app.use(
 
       return callback(new Error("Not allowed by CORS"));
     },
-    credentials: true
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
 app.use(express.json());
